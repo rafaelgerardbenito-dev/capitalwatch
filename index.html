@@ -44,7 +44,82 @@
             transition: background 0.5s ease;
         }
 
-        /* Hapus Arrow/Spinner & Fix Vendor Prefix */
+        /* --- Welcome Splash Screen CSS --- */
+        #welcome-screen {
+            position: fixed;
+            inset: 0;
+            background: #09090b; /* Tetap gelap untuk kontras awal */
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1), opacity 0.5s ease;
+        }
+
+        .welcome-content {
+            text-align: center;
+            animation: fadeInWelcome 1s ease-out;
+        }
+
+        .welcome-logo-box {
+            background: var(--accent);
+            color: #000;
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            font-size: 40px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .welcome-loader {
+            width: 140px;
+            height: 4px;
+            background: #27272a;
+            border-radius: 10px;
+            margin: 24px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-loader::after {
+            content: '';
+            position: absolute;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--accent);
+            animation: loadingBar 1.8s infinite;
+        }
+
+        .screen-hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes fadeInWelcome {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes loadingBar {
+            100% { left: 100%; }
+        }
+        /* --- End Splash Screen CSS --- */
+
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -142,19 +217,21 @@
             outline: none;
         }
 
-        input[type="date"] {
-            padding: 10px;
-            min-height: 45px;
-            appearance: none;
-            -webkit-appearance: none;
-        }
-
         .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; }
         .btn-primary { background: var(--accent); color: #000; }
-        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: #000; padding: 15px 30px; border-radius: 12px; font-weight: 800; transform: translateY(150px); transition: 0.5s; }
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: #000; padding: 15px 30px; border-radius: 12px; font-weight: 800; transform: translateY(150px); transition: 0.5s; z-index: 300; }
     </style>
 </head>
 <body>
+
+    <div id="welcome-screen">
+        <div class="welcome-content">
+            <div class="welcome-logo-box">C</div>
+            <h1 class="welcome-title">CapitalWatch</h1>
+            <div class="welcome-loader"></div>
+            <p style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Menyambut Anda kembali...</p>
+        </div>
+    </div>
 
     <aside>
         <div class="brand">
@@ -303,6 +380,13 @@
                 this.renderAll();
                 document.getElementById('headerDate').innerText = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
                 document.getElementById('txForm').onsubmit = (e) => { e.preventDefault(); this.add(); };
+                
+                // Menjalankan Splash Screen
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        document.getElementById('welcome-screen').classList.add('screen-hidden');
+                    }, 2000); // 2 Detik penyambutan
+                });
             },
 
             add() {
@@ -399,7 +483,6 @@
                     }
                 };
 
-                // Tren Pengeluaran (7 Hari Terakhir)
                 const last7Days = [...Array(7)].map((_, i) => {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
@@ -429,7 +512,6 @@
                     options: config
                 });
 
-                // Kategori
                 const catTotals = {};
                 this.data.filter(t => t.type === 'expense').forEach(t => {
                     catTotals[t.cat] = (catTotals[t.cat] || 0) + t.amount;
