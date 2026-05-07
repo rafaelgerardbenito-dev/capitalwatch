@@ -48,7 +48,7 @@
         #welcome-screen {
             position: fixed;
             inset: 0;
-            background: #09090b; /* Tetap gelap untuk kontras awal */
+            background: #09090b;
             z-index: 9999;
             display: flex;
             align-items: center;
@@ -58,6 +58,7 @@
 
         .welcome-content {
             text-align: center;
+            max-width: 80%;
             animation: fadeInWelcome 1s ease-out;
         }
 
@@ -102,6 +103,14 @@
             height: 100%;
             background: var(--accent);
             animation: loadingBar 1.8s infinite;
+        }
+
+        #welcome-tip {
+            color: #a1a1aa;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.6;
+            min-height: 45px;
         }
 
         .screen-hidden {
@@ -229,7 +238,7 @@
             <div class="welcome-logo-box">C</div>
             <h1 class="welcome-title">CapitalWatch</h1>
             <div class="welcome-loader"></div>
-            <p style="color: #a1a1aa; font-size: 14px; font-weight: 500;">Menyambut Anda kembali...</p>
+            <p id="welcome-tip">Menyiapkan data finansial Anda...</p>
         </div>
     </div>
 
@@ -375,17 +384,33 @@
         const app = {
             data: JSON.parse(localStorage.getItem('cw_vfinal_data')) || [],
             viewDate: new Date(),
+            
+            // Daftar Tips Keuangan
+            financialTips: [
+                "Gunakan metode 50/30/20: 50% kebutuhan, 30% keinginan, 20% tabungan.",
+                "Catat setiap pengeluaran, sekecil apapun itu, agar tidak bocor halus.",
+                "Prioritaskan dana darurat minimal 3-6 kali pengeluaran bulanan.",
+                "Hindari belanja impulsif dengan prinsip 'tunggu 24 jam' sebelum membeli.",
+                "Investasi terbaik adalah investasi pada diri sendiri (belajar skill baru).",
+                "Bedakan antara 'Kebutuhan' yang mendesak dan 'Keinginan' demi gengsi.",
+                "Automasi tabungan tepat setelah menerima gaji agar tidak terpakai jajan.",
+                "Sedikit demi sedikit, lama-lama menjadi bukit. Mulailah menabung hari ini."
+            ],
 
             init() {
                 this.renderAll();
                 document.getElementById('headerDate').innerText = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
                 document.getElementById('txForm').onsubmit = (e) => { e.preventDefault(); this.add(); };
                 
+                // Set tip acak di loading screen
+                const randomTip = this.financialTips[Math.floor(Math.random() * this.financialTips.length)];
+                document.getElementById('welcome-tip').innerText = randomTip;
+
                 // Menjalankan Splash Screen
                 window.addEventListener('load', () => {
                     setTimeout(() => {
                         document.getElementById('welcome-screen').classList.add('screen-hidden');
-                    }, 2000); // 2 Detik penyambutan
+                    }, 3000); // 3 Detik agar user sempat baca tips
                 });
             },
 
