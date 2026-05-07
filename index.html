@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CapitalWatch | Intelligent Finance Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg: #09090b;
+            --sidebar: #121214;
+            --surface: #18181b;
+            --border: #27272a;
+            --accent: #22c55e;
+            --accent-soft: rgba(34, 197, 94, 0.1);
+            --red: #ef4444;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --nav-width: 280px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        [data-theme="light"] {
+            --bg: #f8fafc;
+            --sidebar: #ffffff;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        /* Hapus Arrow/Spinner & Fix Vendor Prefix */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        aside {
+            width: var(--nav-width);
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 32px 20px;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px;
+            margin-bottom: 48px; color: var(--accent); letter-spacing: -1px;
+        }
+
+        .nav-link {
+            padding: 14px 16px; border-radius: var(--radius-md); color: var(--text-muted);
+            font-size: 14px; font-weight: 600; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 12px; cursor: pointer; transition: var(--transition);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--surface); color: var(--text-main);
+        }
+
+        .nav-link.active {
+            background: var(--accent-soft); color: var(--accent);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
+
+        header {
+            height: 80px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 48px; background: rgba(9, 9, 11, 0.7); backdrop-filter: blur(20px);
+            position: sticky; top: 0; z-index: 90; border-bottom: 1px solid var(--border);
+        }
+
+        .content-container {
+            width: 100%; max-width: 1400px;
+            margin: 0 auto; padding: 40px 48px;
+        }
+
+        .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 28px; }
+
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 28px;
+        }
+
+        .col-4 { grid-column: span 4; }
+        .col-8 { grid-column: span 8; }
+        .col-12 { grid-column: span 12; }
+
+        .balance-value { font-size: 32px; font-weight: 800; margin-top: 10px; letter-spacing: -1px; }
+
+        .tx-item {
+            display: flex; align-items: center; gap: 16px; padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .cal-day { aspect-ratio: 1; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: 700; }
+        .cal-day.has-data { background: var(--accent-soft); color: var(--accent); }
+        .cal-day.active { background: var(--accent); color: #000; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            display: none; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(10px);
+        }
+        .modal { background: var(--surface); width: 450px; padding: 30px; border-radius: 20px; border: 1px solid var(--border); }
+        .modal-overlay.show { display: flex; }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            background: var(--bg); 
+            border: 1px solid var(--border); 
+            color: #fff; 
+            border-radius: 8px; 
+            margin-top: 5px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input[type="date"] {
+            padding: 10px;
+            min-height: 45px;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-primary { background: var(--accent); color: #000; }
+        #toast { position: fixed; bottom: 30px; right: 30px; background: var(--accent); color: #000; padding: 15px 30px; border-radius: 12px; font-weight: 800; transform: translateY(150px); transition: 0.5s; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="brand">
+            <div style="background:var(--accent); color:#000; width:35px; height:35px; border-radius:8px; display:flex; align-items:center; justify-content:center">C</div>
+            CapitalWatch
+        </div>
+        <div style="flex:1">
+            <div class="nav-link active" onclick="switchTab('dashboard', this)">Dashboard</div>
+            <div class="nav-link" onclick="switchTab('transactions', this)">Riwayat</div>
+            <div class="nav-link" onclick="switchTab('calendar', this)">Kalender</div>
+            <div class="nav-link" onclick="switchTab('analytics', this)">Analisis</div>
+        </div>
+        <div>
+            <div class="nav-link" onclick="toggleTheme()">Tema</div>
+            <div class="nav-link" style="color:var(--red)" onclick="clearData()">Reset</div>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <div style="font-weight: 800; font-size: 18px;">Overview</div>
+            <div style="display:flex; gap:20px; align-items:center">
+                <p id="headerDate" style="font-size:13px; font-weight:700; color:var(--text-muted)"></p>
+                <button class="btn btn-primary" onclick="openModal()">+ Transaksi</button>
+            </div>
+        </header>
+
+        <div class="content-container">
+            <div id="tab-dashboard" class="tab-content">
+                <div class="grid">
+                    <div class="card col-4">
+                        <p style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase">Saldo</p>
+                        <h1 class="balance-value" id="totalBalance">Rp 0</h1>
+                    </div>
+                    <div class="card col-4">
+                        <p style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase">Masuk</p>
+                        <h1 class="balance-value" style="color:var(--accent)" id="totalInflow">Rp 0</h1>
+                    </div>
+                    <div class="card col-4">
+                        <p style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase">Keluar</p>
+                        <h1 class="balance-value" style="color:var(--red)" id="totalOutflow">Rp 0</h1>
+                    </div>
+                    <div class="card col-8">
+                        <h3>Tren Pengeluaran</h3>
+                        <div style="height:250px; margin-top:20px"><canvas id="mainChart"></canvas></div>
+                    </div>
+                    <div class="card col-4">
+                        <h3>Kategori</h3>
+                        <div style="height:250px; margin-top:20px"><canvas id="donutChart"></canvas></div>
+                    </div>
+                    <div class="card col-12">
+                        <h3>Aktivitas</h3>
+                        <div id="recentList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-analytics" class="tab-content" style="display:none">
+                <div class="grid">
+                    <div class="card col-4" style="text-align:center">
+                        <h3 style="margin-bottom:20px">Health Score</h3>
+                        <div id="healthScore" style="font-size:48px; font-weight:800; color:var(--accent)">0</div>
+                        <p id="healthStatus" style="font-weight:700; margin-top:10px"></p>
+                    </div>
+                    <div class="card col-8">
+                        <h3>Analisis Efisiensi</h3>
+                        <div id="aiAdvice" style="margin-top:20px; color:var(--text-muted)">Input data untuk melihat analisis mendalam.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-transactions" class="tab-content" style="display:none">
+                <div class="card col-12">
+                    <div id="fullList"></div>
+                </div>
+            </div>
+
+            <div id="tab-calendar" class="tab-content" style="display:none">
+                <div class="grid">
+                    <div class="card col-8">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:20px">
+                            <h2 id="calMonth">Mei 2026</h2>
+                            <div style="display:flex; gap:10px">
+                                <button class="btn" style="padding:5px 15px" onclick="app.moveMonth(-1)">Prev</button>
+                                <button class="btn" style="padding:5px 15px" onclick="app.moveMonth(1)">Next</button>
+                            </div>
+                        </div>
+                        <div class="cal-grid" id="calendarBody"></div>
+                    </div>
+                    <div class="card col-4">
+                        <h3>Detail</h3>
+                        <div id="dayInfo"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h2 style="margin-bottom:20px">Catat Transaksi</h2>
+            <form id="txForm">
+                <div>
+                    <label style="font-size:12px; font-weight:700; color:var(--text-muted)">Deskripsi</label>
+                    <input type="text" id="fDesc" required>
+                </div>
+                <div style="display:flex; gap:15px; margin-top:15px">
+                    <div style="flex:1">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted)">Jumlah (Rp)</label>
+                        <input type="number" id="fAmt" required>
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted)">Tipe</label>
+                        <select id="fType">
+                            <option value="expense">Keluar</option>
+                            <option value="income">Masuk</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; gap:15px; margin-top:15px">
+                    <div style="flex:1">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted)">Kategori</label>
+                        <select id="fCat">
+                            <option>Gaji</option><option>Makanan</option><option>Transport</option>
+                            <option>Hiburan</option><option>Belanja</option><option>Lainnya</option>
+                        </select>
+                    </div>
+                    <div style="flex:1">
+                        <label style="font-size:12px; font-weight:700; color:var(--text-muted)">Tanggal</label>
+                        <input type="date" id="fDate" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; margin-top:25px">Simpan</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast">Tersimpan</div>
+
+    <script>
+        const app = {
+            data: JSON.parse(localStorage.getItem('cw_vfinal_data')) || [],
+            viewDate: new Date(),
+
+            init() {
+                this.renderAll();
+                document.getElementById('headerDate').innerText = new Date().toLocaleDateString('id-ID', { dateStyle: 'full' });
+                document.getElementById('txForm').onsubmit = (e) => { e.preventDefault(); this.add(); };
+            },
+
+            add() {
+                const tx = {
+                    id: Date.now(),
+                    desc: document.getElementById('fDesc').value,
+                    amount: parseFloat(document.getElementById('fAmt').value),
+                    type: document.getElementById('fType').value,
+                    cat: document.getElementById('fCat').value,
+                    date: document.getElementById('fDate').value
+                };
+                this.data.unshift(tx);
+                this.save(); this.renderAll(); closeModal(); this.showToast();
+            },
+
+            save() { localStorage.setItem('cw_vfinal_data', JSON.stringify(this.data)); },
+
+            renderAll() {
+                this.calculateBalances();
+                this.renderRecent();
+                this.renderCalendar();
+                this.renderAnalytics();
+                this.initCharts();
+            },
+
+            calculateBalances() {
+                let total = 0, inF = 0, outF = 0;
+                this.data.forEach(t => {
+                    if(t.type === 'income') { total += t.amount; inF += t.amount; }
+                    else { total -= t.amount; outF += t.amount; }
+                });
+                document.getElementById('totalBalance').innerText = this.fmt(total);
+                document.getElementById('totalInflow').innerText = this.fmt(inF);
+                document.getElementById('totalOutflow').innerText = this.fmt(outF);
+                this.totals = { total, inF, outF };
+            },
+
+            renderRecent() {
+                const list = this.data.slice(0,5);
+                document.getElementById('recentList').innerHTML = list.length ? list.map(t => this.rowTpl(t)).join('') : "<p style='color:var(--text-muted); margin-top:15px'>Belum ada transaksi</p>";
+                document.getElementById('fullList').innerHTML = this.data.map(t => this.rowTpl(t)).join('');
+            },
+
+            rowTpl(t) {
+                return `
+                    <div class="tx-item">
+                        <div style="flex:1"><b>${t.desc}</b><br><small style="color:var(--text-muted)">${t.cat} | ${t.date}</small></div>
+                        <div style="font-weight:800; color:${t.type === 'income' ? 'var(--accent)' : 'var(--text-main)'}">
+                            ${t.type === 'income' ? '+' : '-'} ${this.fmt(t.amount)}
+                        </div>
+                        <button onclick="app.del(${t.id})" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:11px; margin-left:15px">Hapus</button>
+                    </div>
+                `;
+            },
+
+            renderAnalytics() {
+                const { inF, outF } = this.totals;
+                if(this.data.length === 0) return;
+                const saveRate = inF > 0 ? ((inF - outF) / inF * 100) : 0;
+                const score = Math.min(100, Math.max(0, 50 + saveRate/2));
+                document.getElementById('healthScore').innerText = Math.round(score);
+                document.getElementById('healthStatus').innerText = score > 70 ? "OPTIMAL" : "WASPADA";
+                document.getElementById('aiAdvice').innerText = score > 70 ? "Alokasi dana Anda sangat sehat." : "Perketat pengeluaran di kategori terbesar.";
+            },
+
+            renderCalendar() {
+                const body = document.getElementById('calendarBody'); body.innerHTML = '';
+                const m = this.viewDate.getMonth(), y = this.viewDate.getFullYear();
+                document.getElementById('calMonth').innerText = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(this.viewDate);
+                const first = new Date(y, m, 1).getDay(), days = new Date(y, m+1, 0).getDate();
+                for(let i=0; i<first; i++) body.innerHTML += '<div></div>';
+                for(let d=1; d<=days; d++) {
+                    const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const has = this.data.some(t => t.date === dStr);
+                    body.innerHTML += `<div class="cal-day ${has ? 'has-data' : ''}" onclick="app.showDay('${dStr}', this)">${d}</div>`;
+                }
+            },
+
+            showDay(date, el) {
+                document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('active'));
+                el.classList.add('active');
+                const filtered = this.data.filter(t => t.date === date);
+                document.getElementById('dayInfo').innerHTML = filtered.length ? filtered.map(t => this.rowTpl(t)).join('') : "Kosong";
+            },
+
+            initCharts() {
+                const config = { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#27272a' } },
+                        x: { grid: { display: false } }
+                    }
+                };
+
+                // Tren Pengeluaran (7 Hari Terakhir)
+                const last7Days = [...Array(7)].map((_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    return d.toISOString().split('T')[0];
+                }).reverse();
+
+                const chartData = last7Days.map(date => {
+                    return this.data
+                        .filter(t => t.date === date && t.type === 'expense')
+                        .reduce((sum, t) => sum + t.amount, 0);
+                });
+
+                const ctx1 = document.getElementById('mainChart');
+                if(window.c1) window.c1.destroy();
+                window.c1 = new Chart(ctx1, {
+                    type: 'line',
+                    data: { 
+                        labels: ['H-6','H-5','H-4','H-3','H-2','H-1','Hari Ini'], 
+                        datasets: [{ 
+                            data: chartData, 
+                            borderColor: '#22c55e', 
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            fill: true,
+                            tension: 0.4 
+                        }] 
+                    },
+                    options: config
+                });
+
+                // Kategori
+                const catTotals = {};
+                this.data.filter(t => t.type === 'expense').forEach(t => {
+                    catTotals[t.cat] = (catTotals[t.cat] || 0) + t.amount;
+                });
+
+                const catLabels = Object.keys(catTotals);
+                const catValues = Object.values(catTotals);
+
+                const ctx2 = document.getElementById('donutChart');
+                if(window.c2) window.c2.destroy();
+                window.c2 = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: { 
+                        labels: catLabels.length ? catLabels : ['Empty'], 
+                        datasets: [{ 
+                            data: catValues.length ? catValues : [1], 
+                            backgroundColor: ['#22c55e', '#ef4444', '#f59e0b', '#3b82f6', '#a855f7', '#71717a'],
+                            borderWidth: 0 
+                        }] 
+                    },
+                    options: { 
+                        ...config, 
+                        cutout: '75%',
+                        plugins: { legend: { display: catLabels.length > 0, position: 'bottom', labels: { color: '#a1a1aa', usePointStyle: true } } }
+                    }
+                });
+            },
+
+            del(id) { if(confirm('Hapus?')) { this.data = this.data.filter(t => t.id !== id); this.save(); this.renderAll(); } },
+            moveMonth(v) { this.viewDate.setMonth(this.viewDate.getMonth() + v); this.renderCalendar(); },
+            fmt(n) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n); },
+            showToast() { const t = document.getElementById('toast'); t.style.transform = 'translateY(0)'; setTimeout(() => t.style.transform = 'translateY(150px)', 3000); }
+        };
+
+        function switchTab(id, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById('tab-' + id).style.display = 'block';
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            el.classList.add('active');
+        }
+        function openModal() { document.getElementById('modalOverlay').classList.add('show'); document.getElementById('fDate').valueAsDate = new Date(); }
+        function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+        function toggleTheme() { document.body.setAttribute('data-theme', document.body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'); }
+        function clearData() { if(confirm('Hapus semua?')) { localStorage.clear(); location.reload(); } }
+
+        app.init();
+    </script>
+</body>
+</html>
